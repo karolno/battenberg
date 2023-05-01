@@ -3,7 +3,7 @@ Maintainer: Stefan Dentro <sd11@sanger.ac.uk>
 License: GPL-3
 Type: Package
 Title: Battenberg subclonal copy number caller
-Version: 2.2.10
+Version: 2.3.0
 Authors@R: c(person("David", "Wedge", role=c("aut"), email="dw9@sanger.ac.uk"),
     person("Peter", "Van Loo", role=c("aut")),
     person("Naser", "Ansari-Pour", role=c("aut"), email="naser.ansari-pour@imm.ox.ac.uk"),
@@ -12,7 +12,8 @@ Authors@R: c(person("David", "Wedge", role=c("aut"), email="dw9@sanger.ac.uk"),
     person("Jonas","Demeulemeester", role = c("aut")),
     person("Kevin", "Dawson", role=c("ctb")),
     person("Gro", "Nielsen", role="ctb"),
-    person("Jiqiu","Cheng", role="ctb"))
+    person("Jiqiu","Cheng", role="ctb"),
+    person("Karol", "Nowicki-Osuch", role="aut", email="kpn2114@columbia.edu", comment=c(ORCID = "0000-0003-3828-8620")))
 Description: Estimate subclonal copy number from whole genome sequencing or SNP6 data.
 Depends: 
   R (>= 2.13.0),
@@ -38,5 +39,12 @@ Imports:
 URL: https://github.com/Wedge-Oxford/battenberg
 LazyLoad: yes
 Suggests:
-    testthat
-RoxygenNote: 7.1.1
+  testthat,
+  cowplot,
+  HMMcopy,
+  Rsubread,
+  matrixStats,
+  Biobase,
+  BSgenome.Hsapiens.UCSC.hg19,
+  BSgenome.Hsapiens.UCSC.hg38
+RoxygenNote: 7.2.3

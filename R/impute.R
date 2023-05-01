@@ -12,17 +12,17 @@
 #' @author dw9
 #' @export
 run.impute = function(inputfile, outputfile.prefix, is.male, imputeinfofile, impute.exe="impute2", region.size=5000000, chrom=NA, seed=as.integer(Sys.time())) {
-  
+
   # Read in the impute file information
   impute.info = parse.imputeinfofile(imputeinfofile, is.male, chrom=chrom)
-  
+
   # Run impute for each region of the size specified above
   for(r in 1:nrow(impute.info)){
     boundaries = seq(as.numeric(impute.info[r,]$start),as.numeric(impute.info[r,]$end),region.size)
     if(boundaries[length(boundaries)] != impute.info[r,]$end){
       boundaries = c(boundaries,impute.info[r,]$end)
     }
-    
+
     # Take the start of the region+1 here to make sure there are no overlapping regions, wich causes a
     # problem with SNPs on exactly the boundary. It does mean the first base on the first chromosome
     # cannot be phased
@@ -123,7 +123,7 @@ get.chrom.names = function(imputeinfofile, is.male, chrom=NA, analysis="paired")
 combine.impute.output = function(inputfile.prefix, outputfile, is.male, imputeinfofile, region.size=5000000, chrom=NA) {
   # Read in the impute file information
   impute.info = parse.imputeinfofile(imputeinfofile, is.male, chrom=chrom)
-  
+
   # Assemble the start and end points of all regions
   all.boundaries = array(0,c(0,2))
   for(r in 1:nrow(impute.info)){
@@ -267,7 +267,7 @@ run.beagle5 = function(beaglejar,
     cmd <- paste0(javajre,
 		  " -Xmx",maxheap.gb,"g",
 		  " -Xms", maxheap.gb, "g",
-		  " -XX:+UseParallelOldGC",
+		  " -XX:+UseParallelGC",
                   " -jar ",beaglejar,
                   " gt=",vcfpath,
                   " ref=",reffile ,
@@ -308,7 +308,7 @@ run.beagle5 = function(beaglejar,
 #' @param javajre Path to the Java JRE executable (default java, i.e. in $PATH)
 #' @author sd11, maxime.tarabichi, jdemeul
 #' @export
-run_haplotyping = function(chrom, tumourname, normalname, ismale, imputeinfofile, problemloci, impute_exe, min_normal_depth, chrom_names, 
+run_haplotyping = function(chrom, tumourname, normalname, ismale, imputeinfofile, problemloci, impute_exe, min_normal_depth, chrom_names,
                            externalhaplotypeprefix = NA,
                            use_previous_imputation=F,
                            snp6_reference_info_file=NA, heterozygousFilter=NA,
@@ -322,18 +322,18 @@ run_haplotyping = function(chrom, tumourname, normalname, ismale, imputeinfofile
                            beagleoverlap=4,
 			   javajre="java")
 {
-  
+
   previoushaplotypefile <- list.files(pattern = paste0("_impute_output_chr", chrom, "_allHaplotypeInfo.txt"))[1]
   if (use_previous_imputation & !is.na(previoushaplotypefile)) {
-    
+
     print(paste0("Previous imputation results found, copying info from", previoushaplotypefile, " to flip alleles"))
     currenthaplotypefile <- paste(tumourname, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt", sep="")
     if (previoushaplotypefile != currenthaplotypefile) {
       file.copy(from = previoushaplotypefile, to = paste(tumourname, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt", sep=""))
     }
-    
+
   } else {
-    
+
     if (file.exists(paste(tumourname, "_alleleFrequencies_chr", chrom, ".txt", sep=""))) {
       generate.impute.input.wgs(chrom=chrom,
                                 tumour.allele.counts.file=paste(tumourname,"_alleleFrequencies_chr", chrom, ".txt", sep=""),
@@ -355,7 +355,7 @@ run_haplotyping = function(chrom, tumourname, normalname, ismale, imputeinfofile
                                  is.male=ismale,
                                  heterozygousFilter=heterozygousFilter)
     }
-    
+
     if(usebeagle){
       ## Convert input files for beagle5
       imputeinputfile <- paste(tumourname,
@@ -394,7 +394,7 @@ run_haplotyping = function(chrom, tumourname, normalname, ismale, imputeinfofile
                  impute.exe=impute_exe,
                  region.size=5000000,
                  chrom=chrom)
-      
+
       # As impute runs in windows across a chromosome we need to assemble the output
       combine.impute.output(inputfile.prefix=paste(tumourname, "_impute_output_chr", chrom, ".txt", sep=""),
                             outputfile=paste(tumourname, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt", sep=""),
@@ -405,22 +405,22 @@ run_haplotyping = function(chrom, tumourname, normalname, ismale, imputeinfofile
       # Cleanup temp Impute output
       unlink(paste(tumourname, "_impute_output_chr", chrom, ".txt*K.txt*", sep=""))
     }
-    
+
   }
-  
+
 
   # If an allele counts file exists we assume this is a WGS sample and run the corresponding step, otherwise it must be SNP6
   allelefrequenciesfile <- paste0(tumourname, "_alleleFrequencies_chr", chrom, ".txt")
   print(allelefrequenciesfile)
   print(file.exists(allelefrequenciesfile))
-  
+
   if (file.exists(allelefrequenciesfile)) {
     # WGS - Transform the impute output into haplotyped BAFs
-    
+
     # if present, input external haplotype blocks
     if (!is.na(externalhaplotypeprefix) && file.exists(paste0(externalhaplotypeprefix, chrom, ".vcf"))) {
       print("Adding in the external haplotype blocks")
-      
+
       # output BAFs to plot pre-external haplotyping
       GetChromosomeBAFs(chrom=chrom,
                         SNP_file=allelefrequenciesfile,
@@ -429,21 +429,21 @@ run_haplotyping = function(chrom, tumourname, normalname, ismale, imputeinfofile
                         outfile=paste(tumourname, "_chr", chrom, "_heterozygousMutBAFs_haplotyped_noExt.txt", sep=""),
                         chr_names=chrom_names,
                         minCounts=min_normal_depth)
-      
+
       # Plot what we have before external haplotyping is incorporated
       plot.haplotype.data(haplotyped.baf.file=paste(tumourname, "_chr", chrom, "_heterozygousMutBAFs_haplotyped_noExt.txt", sep=""),
                           imageFileName=paste(tumourname,"_chr",chrom,"_heterozygousData_noExt.png",sep=""),
                           samplename=tumourname,
                           chrom=chrom,
                           chr_names=chrom_names)
-      
+
       input_known_haplotypes(chrom = chrom,
                              chrom_names = chrom_names,
                              imputedHaplotypeFile = paste0(tumourname, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt"),
                              externalHaplotypeFile = paste0(externalhaplotypeprefix, chrom, ".vcf"))
-      
+
     }
-    
+
     GetChromosomeBAFs(chrom=chrom,
                       SNP_file=paste(tumourname, "_alleleFrequencies_chr", chrom, ".txt", sep=""),
                       haplotypeFile=paste(tumourname, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt", sep=""),
@@ -461,7 +461,7 @@ run_haplotyping = function(chrom, tumourname, normalname, ismale, imputeinfofile
                            outputfile=paste(tumourname, "_chr", chrom, "_heterozygousMutBAFs_haplotyped.txt", sep=""),
                            chr_names=chrom_names)
   }
-  
+
   # Plot what we have until this point
   plot.haplotype.data(haplotyped.baf.file=paste(tumourname, "_chr", chrom, "_heterozygousMutBAFs_haplotyped.txt", sep=""),
                       imageFileName=paste(tumourname,"_chr",chrom,"_heterozygousData.png",sep=""),
@@ -497,7 +497,7 @@ run_haplotyping = function(chrom, tumourname, normalname, ismale, imputeinfofile
 #' @author sd11, maxime.tarabichi, jdemeul, Naser Ansari-Pour (BDI, Oxford)
 #' @export
 
-run_haplotyping_germline = function(chrom, germlinename, normalname, ismale, imputeinfofile, problemloci, impute_exe, min_normal_depth, chrom_names, 
+run_haplotyping_germline = function(chrom, germlinename, normalname, ismale, imputeinfofile, problemloci, impute_exe, min_normal_depth, chrom_names,
                            externalhaplotypeprefix = NA,
                            use_previous_imputation=F,
                            snp6_reference_info_file=NA, heterozygousFilter=NA,
@@ -511,18 +511,18 @@ run_haplotyping_germline = function(chrom, germlinename, normalname, ismale, imp
                            beagleoverlap=4,
                            javajre="java")
 {
-  
+
   previoushaplotypefile <- list.files(pattern = paste0("_impute_output_chr", chrom, "_allHaplotypeInfo.txt"))[1]
   if (use_previous_imputation & !is.na(previoushaplotypefile)) {
-    
+
     print(paste0("Previous imputation results found, copying info from", previoushaplotypefile, " to flip alleles"))
     currenthaplotypefile <- paste(germlinename, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt", sep="")
     if (previoushaplotypefile != currenthaplotypefile) {
       file.copy(from = previoushaplotypefile, to = paste(germlinename, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt", sep=""))
     }
-    
+
   } else {
-    
+
     if (file.exists(paste(germlinename, "_alleleFrequencies_chr", chrom, ".txt", sep=""))) {
       generate.impute.input.wgs.germline(chrom=chrom,
                                 germline.allele.counts.file=paste(germlinename,"_alleleFrequencies_chr", chrom, ".txt", sep=""),
@@ -535,7 +535,7 @@ run_haplotyping_germline = function(chrom, germlinename, normalname, ismale, imp
     } else {
       stop("Germline calling is currently on WGS data only - SNP array data is not sufficiently dense to detect all germline CNVs")
     }
-    
+
     if(usebeagle){
       ## Convert input files for beagle5
       imputeinputfile <- paste(germlinename,
@@ -574,7 +574,7 @@ run_haplotyping_germline = function(chrom, germlinename, normalname, ismale, imp
                  impute.exe=impute_exe,
                  region.size=5000000,
                  chrom=chrom)
-      
+
       # As impute runs in windows across a chromosome we need to assemble the output
       combine.impute.output(inputfile.prefix=paste(germlinename, "_impute_output_chr", chrom, ".txt", sep=""),
                             outputfile=paste(germlinename, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt", sep=""),
@@ -585,22 +585,22 @@ run_haplotyping_germline = function(chrom, germlinename, normalname, ismale, imp
       # Cleanup temp Impute output
       unlink(paste(germlinename, "_impute_output_chr", chrom, ".txt*K.txt*", sep=""))
     }
-    
+
   }
-  
-  
+
+
   # If an allele counts file exists we assume this is a WGS sample and run the corresponding step, otherwise it must be SNP6
   allelefrequenciesfile <- paste0(germlinename, "_alleleFrequencies_chr", chrom, ".txt")
   print(allelefrequenciesfile)
   print(file.exists(allelefrequenciesfile))
-  
+
   if (file.exists(allelefrequenciesfile)) {
     # WGS - Transform the impute output into haplotyped BAFs
-    
+
     # if present, input external haplotype blocks
     if (!is.na(externalhaplotypeprefix) && file.exists(paste0(externalhaplotypeprefix, chrom, ".vcf"))) {
       print("Adding in the external haplotype blocks")
-      
+
       # output BAFs to plot pre-external haplotyping
       GetChromosomeBAFs(chrom=chrom,
                         SNP_file=allelefrequenciesfile,
@@ -609,21 +609,21 @@ run_haplotyping_germline = function(chrom, germlinename, normalname, ismale, imp
                         outfile=paste(germlinename, "_chr", chrom, "_heterozygousMutBAFs_haplotyped_noExt.txt", sep=""),
                         chr_names=chrom_names,
                         minCounts=min_normal_depth)
-      
+
       # Plot what we have before external haplotyping is incorporated
       plot.haplotype.data(haplotyped.baf.file=paste(germlinename, "_chr", chrom, "_heterozygousMutBAFs_haplotyped_noExt.txt", sep=""),
                           imageFileName=paste(germlinename,"_chr",chrom,"_heterozygousData_noExt.png",sep=""),
                           samplename=germlinename,
                           chrom=chrom,
                           chr_names=chrom_names)
-      
+
       input_known_haplotypes(chrom = chrom,
                              chrom_names = chrom_names,
                              imputedHaplotypeFile = paste0(germlinename, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt"),
                              externalHaplotypeFile = paste0(externalhaplotypeprefix, chrom, ".vcf"))
-      
+
     }
-    
+
     GetChromosomeBAFs(chrom=chrom,
                       SNP_file=paste(germlinename, "_alleleFrequencies_chr", chrom, ".txt", sep=""),
                       haplotypeFile=paste(germlinename, "_impute_output_chr", chrom, "_allHaplotypeInfo.txt", sep=""),
@@ -634,7 +634,7 @@ run_haplotyping_germline = function(chrom, germlinename, normalname, ismale, imp
   } else {
     stop("Germline calling is only on WGS data - SNParray data not sufficiently dense")
   }
-  
+
   # Plot what we have until this point
   plot.haplotype.data(haplotyped.baf.file=paste(germlinename, "_chr", chrom, "_heterozygousMutBAFs_haplotyped.txt", sep=""),
                       imageFileName=paste(germlinename,"_chr",chrom,"_heterozygousData.png",sep=""),

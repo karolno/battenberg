@@ -15,6 +15,12 @@ R -q -e 'BiocManager::install(c("devtools", "splines", "readr", "doParallel", "g
 R -q -e 'devtools::install_github("VanLoo-lab/ascat/ASCAT")'
 ```
 
+The packages has additional functionality that depends on optional packages:  cowplot, HMMcopy, Rsubread, matrixStats, Biobase, BSgenome.Hsapiens.UCSC.hg19. This functionality is only required for the analysis of mutREAD data. To install these pacakges from the command line run:
+
+```
+install.packages(c("cowplot", "matrixStats"))
+R -q -e 'BiocManager::install(c("HMMcopy", "Rsubread", "Biobase", "BSgenome.Hsapiens.UCSC.hg19"))'
+```
 #### Installation from Github
 
 To install Battenberg, run the following from the command line:
@@ -46,6 +52,16 @@ The bundle contains the following files:
   * GC_correction_hg38.zip
   * RT_correction_hg38.zip
   * README.txt
+
+`GRCh37 - mutREAD` reference files may downloaded from here: TBC
+
+The bundle contains the following files:
+  * battenberg_1000genomesloci2012_v3.tar.gz
+  * battenberg_impute_1000G_v3.tar.gz
+  * probloci_270415.txt.gz
+  * battenberg_wgs_gc_correction_1000g_v3.tar.gz
+  * battenberg_wgs_replic_correction_1000g_v3.tar.gz
+
 
 #### Pipeline
 

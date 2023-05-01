@@ -9,14 +9,14 @@
 #' @param sep Column separator (Default: \\t)
 #' @param chrom_col The column number that contains chromosome denominations. This column will automatically be cast as a character. Should be counted including the row.names (Default: 1)
 #' @param skip The number of rows to skip before reading (Default: 0)
-#' @return A data frame with contents of the file 
+#' @return A data frame with contents of the file
 #' @export
 read_table_generic = function(file, header=T, row.names=F, stringsAsFactor=F, sep="\t", chrom_col=1, skip=0) {
   # stringsAsFactor is not needed here, but kept for legacy purposes
-  
+
   # Read in first line to obtain the header
   d = readr::read_delim(file=file, delim=sep, col_names=header, n_max=1, skip=skip, col_types = readr::cols())
-  
+
   # fetch the name of the first column to set its col_type for reading in the whole file
   # this is needed as readr does not understand the chromosome column properly
   col_types = list()
@@ -25,7 +25,7 @@ read_table_generic = function(file, header=T, row.names=F, stringsAsFactor=F, se
     col_types[[first_colname]] = readr::col_character()
   }
   d = readr::read_delim(file=file, delim=sep, col_names=header, col_types=col_types, skip=skip)
-  
+
   # readr never reads row.names, so this needs to be manually corrected
   if (row.names) {
     row.names(d) = d[,1]
@@ -78,7 +78,7 @@ read_bafsegmented = function(filename, header=T) {
 #' @param filename Filename of the file to read in
 #' @return A data frame with the imputed genotype output
 read_imputed_output = function(filename) {
-  return(readr::read_delim(file = filename, col_names = c("snpidx", "rsidx", "pos", "ref", "alt", "hap1", "hap2"), col_types = "cciccii", delim = " "))
+  return(readr::read_table(file = filename, col_names = c("snpidx", "rsidx", "pos", "ref", "alt", "hap1", "hap2"), col_types = "cciccii")) # use of read_table allows for space or tab separator. This caused issues with impute data
 }
 
 #' Parser for allele frequencies data
@@ -108,7 +108,7 @@ read_beagle_output = function(filename) {
 ########################################################################################
 #' Function to concatenate Impute output
 #' @noRd
-concatenateImputeFiles<-function(inputStart, boundaries) { #outputFile, 
+concatenateImputeFiles<-function(inputStart, boundaries) { #outputFile,
   infiles = c()
   for(i in 1:nrow(boundaries)) {
     filename = paste(inputStart,"_",boundaries[i,1]/1000,"K_",boundaries[i,2]/1000,"K.txt_haps",sep="")
@@ -222,7 +222,7 @@ psi2psit = function(rho, psi) {
 # Refitting functions
 ########################################################################################
 #' Calculate rho and psi values from a refit suggestion
-#' 
+#'
 #' Use this function to calculate the refit values from a refit suggestion.
 #' @param refBAF BAF of the segment
 #' @param refLogR logR of the segment
@@ -241,7 +241,7 @@ calc_rho_psi_refit = function(refBAF, refLogR, refMajor, refMinor, rho, gamma_pa
 }
 
 #' Calculate refit values from a refit suggestion
-#' 
+#'
 #' Use this function to calculate the refit values from a refit suggestion.
 #' @param subclones_file A Battenberg subclones.txt file
 #' @param segment_chrom Chromsome of the segment to use for refitting
@@ -263,7 +263,7 @@ suggest_refit = function(subclones_file, segment_chrom, segment_pos, new_nMaj, n
 }
 
 #' Create refit suggestions for a fit copy number profile
-#' 
+#'
 #' This function takes a fit copy number profile and generates refit suggestions for a future rerun.
 #' If there are clonal alterations above a specified size, then those written out as supplied as suggestions,
 #' otherwise a refit suggestion of an external purity value will be saved.
@@ -280,13 +280,13 @@ cnfit_to_refit_suggestions = function(samplename, subclones_file, rho_psi_file, 
   subclones = Battenberg::read_table_generic(subclones_file)
   subclones$len = subclones$endpos/1000000-subclones$startpos/1000000
   subclones$is_cna = subclones$nMaj1_A!=subclones$nMin1_A
-  
+
   if (any(subclones$len > min_segment_size_mb & subclones$is_cna)) {
     # There are large scale alterations, save the top couple as suggestions
     rho_psi = read.table(rho_psi_file, header=T, stringsAsFactors=F)
     rho = rho_psi["FRAC_GENOME", "rho"]
     psi_t = rho_psi["FRAC_GENOME", "psi"]
-    
+
     # Take only segments that are clonal and are an alteration
     is_subclonal = subclones$frac1_A < 1
     subclones_clonal_cna = subset(subclones, !is_subclonal & subclones$is_cna)
@@ -295,18 +295,18 @@ cnfit_to_refit_suggestions = function(samplename, subclones_file, rho_psi_file, 
     if (nrow(subclones_clonal_cna)==0) {
 	output = data.frame(project=NA, samplename=samplename, qc=NA, cellularity_refit=T, chrom=NA, pos=NA, maj=NA, min=NA, baf=NA, logr=NA, rho_estimate=NA, psi_t_estimate=NA, rho_diff=NA, psi_t_diff=NA)
     } else {
-    
+
     # Generate a couple of solutions, but not more than are possibly available
     max_solutions = ifelse(nrow(subclones_clonal_cna) >= 5, 5, nrow(subclones_clonal_cna))
     subclones_clonal_cna = subclones_clonal_cna[1:max_solutions, , drop=F]
-    
+
     # Determine position in Mb within the segment
     position = subclones_clonal_cna$startpos + (subclones_clonal_cna$endpos - subclones_clonal_cna$startpos) / 2
     position = position / 1000000
     position_round_up = ceiling(position)
     position_round_down = floor(position)
     position = ifelse(position_round_up < subclones_clonal_cna$endpos, position_round_up, position_round_down)
-    
+
     output = data.frame(project=rep(NA, max_solutions),
                         samplename=rep(samplename, max_solutions),
                         qc=rep(NA, max_solutions),
@@ -317,7 +317,7 @@ cnfit_to_refit_suggestions = function(samplename, subclones_file, rho_psi_file, 
                         min=subclones_clonal_cna$nMin1_A[1:max_solutions],
                         baf=subclones_clonal_cna$BAF[1:max_solutions],
                         logr=subclones_clonal_cna$LogR[1:max_solutions])
-    
+
     #refBAF, refLogR, refMajor, refMinor, rho, gamma_param
     res = calc_rho_psi_refit(output$baf, output$logr, output$maj, output$min, rho, gamma_param)
     output$rho_estimate = res$rho
