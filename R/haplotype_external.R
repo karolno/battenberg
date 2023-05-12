@@ -10,7 +10,7 @@ split_input_haplotypes <- function(chrom_names, externalhaplotypefile=NA, outpre
   if (is.na(externalhaplotypefile)) return(NULL)
 
   hetsnps <- VariantAnnotation::readVcf(file = externalhaplotypefile,
-                     param = VariantAnnotation::ScanVcfParam(fixed = "ALT", info = NA, geno = c("GT", "PS"), trimEmpty = T))
+                                        param = VariantAnnotation::ScanVcfParam(fixed = "ALT", info = NA, geno = c("GT", "PS"), trimEmpty = T))
 
   hetsnps <- split(x = hetsnps, f = GenomicRanges::seqnames(hetsnps))
   hetsnps <- hetsnps[chrom_names]
@@ -46,7 +46,7 @@ input_known_haplotypes = function(chrom_names, chrom, imputedHaplotypeFile, exte
 
   # load vcf containing external haplotyped variants
   hetsnps <- suppressWarnings(VariantAnnotation::readVcf(file = externalHaplotypeFile,
-                                      param = VariantAnnotation::ScanVcfParam(fixed = "ALT", info = NA, geno = c("GT", "PS"), trimEmpty = T)))
+                                                         param = VariantAnnotation::ScanVcfParam(fixed = "ALT", info = NA, geno = c("GT", "PS"), trimEmpty = T)))
 
   # subset to phased het SNPs on chrom & drop any multiallelic var & indels if present
   hetsnps <- hetsnps[which(VariantAnnotation::geno(hetsnps)$GT %in% c("0|1", "1|0"))]
@@ -124,6 +124,7 @@ write_battenberg_phasing <- function(tumourname, SNPfiles, imputedHaplotypeFiles
   bafsegmented <- split(x = bafsegmented[, c("Position", "BAFphased", "BAFseg")], f = bafsegmented$Chromosome)
 
   for (i in 1:length(chrom_names)) {
+    # print (i)
     chrom = chrom_names[i]
     # read allele counts and imputed haplotypes (for the actually used alleles & loci)
     snp_data <- read_alleleFrequencies(SNPfiles[i])
@@ -140,21 +141,31 @@ write_battenberg_phasing <- function(tumourname, SNPfiles, imputedHaplotypeFiles
     merge_data <- cbind(merge_data[, c("CHR", "pos", "ref", "alt", "ref_count", "alt_count", "hap1", "hap2")], BAF = merge_data$alt_count/(merge_data$ref_count+merge_data$alt_count))
 
     # add in the segmented BAF values and start creating output vcf
-    merge_data <- merge(x = merge_data, y = bafsegmented[[chrom]], by.x = "pos", by.y = "Position",
-                        all.x = include_homozygous, sort = T)
+    #
+    # kno: Sometimes the file might be missing data for X chromosome, here is a quick solutions
+    # if(chrom %in% names(bafsegmented)) {
+      merge_data <- merge(x = merge_data, y = bafsegmented[[chrom]], by.x = "pos", by.y = "Position",
+                          all.x = include_homozygous, sort = T)
+    # } else {
+    #   merge_data$BAFphased <- .55
+    #   merge_data$BAFseg <- 0.55
+    #   merge_data<-merge_data[2,]
+    #   # return(NULL)
+    # }
 
     bbphasing_vr <- VariantAnnotation::VRanges(seqnames = merge_data$CHR, ranges = IRanges::IRanges(start = merge_data$pos, width = 1),
-                            ref = merge_data$ref, alt = merge_data$alt,
-                            totalDepth = merge_data$ref_count+merge_data$alt_count,
-                            refDepth = merge_data$ref_count, altDepth = merge_data$alt_count)
+                                               ref = merge_data$ref, alt = merge_data$alt,
+                                               totalDepth = merge_data$ref_count+merge_data$alt_count,
+                                               refDepth = merge_data$ref_count, altDepth = merge_data$alt_count)
 
     # assign the genotypes based on flipping of individual BAF values in regions of allelic imbalance according to BAFseg
     S4Vectors::mcols(bbphasing_vr)$GT <- ifelse(is.na(merge_data$BAFphased), paste0(merge_data$hap1, "|", merge_data$hap2),
-                                     ifelse(merge_data$BAFseg > 0.525 | is.na(merge_data$BAFseg),
-                                            ifelse(abs(merge_data$BAFphased-merge_data$BAF) < 1e-5, "1|0", "0|1"),
-                                            ifelse(abs(merge_data$BAFphased-merge_data$BAF) < 1e-5, "1/0", "0/1")))
+                                                ifelse(merge_data$BAFseg > 0.525 | is.na(merge_data$BAFseg),
+                                                       ifelse(abs(merge_data$BAFphased-merge_data$BAF) < 1e-5, "1|0", "0|1"),
+                                                       ifelse(abs(merge_data$BAFphased-merge_data$BAF) < 1e-5, "1/0", "0/1")))
 
     # add phase set annotation based on segmented BAF: every segment = phase set
+    # S4Vectors::mcols(bbphasing_vr)$PS <- rep(as.integer(NA), times = length(bbphasing_vr))
     S4Vectors::mcols(bbphasing_vr)$PS <- as.integer(NA)
     phasedidx <- which(merge_data$BAFseg > 0.525)
     if (length(phasedidx) > 0) {
@@ -171,7 +182,7 @@ write_battenberg_phasing <- function(tumourname, SNPfiles, imputedHaplotypeFiles
     # write out vcf
     VariantAnnotation::sampleNames(bbphasing_vr) <- tumourname
 
-    VariantAnnotation::writeVcf(obj = bbphasing_vr, filename = paste0(outprefix, chrom, ".vcf"), index = F)
+    VariantAnnotation::writeVcf(obj = bbphasing_vr, filename = paste0(outprefix, chrom, ".vcf"), index = F, nchunk = NA)
 
   }
   return(NULL)
@@ -208,8 +219,8 @@ get_multisample_phasing <- function(chrom, bbphasingprefixes, maxlag = 100, rela
     singlevcf <- vcfs_common[[vcfidx]]
     sid <- VariantAnnotation::samples(VariantAnnotation::header(singlevcf))
     adddf <- S4Vectors::DataFrame(Major = VariantAnnotation::geno(singlevcf)$GT[,1], #Major = as.integer(ifelse(test = grepl(pattern = "|", x = geno(singlevcf)$GT, fixed = T), substr(x = geno(singlevcf)$GT, 1, 1), NA)),
-                       BAF = VariantAnnotation::geno(singlevcf)$AD[,1,2]/BiocGenerics::rowSums(VariantAnnotation::geno(singlevcf)$AD[,1,]),
-                       PS = VariantAnnotation::geno(singlevcf)$PS[,1])
+                                  BAF = VariantAnnotation::geno(singlevcf)$AD[,1,2]/BiocGenerics::rowSums(VariantAnnotation::geno(singlevcf)$AD[,1,]),
+                                  PS = VariantAnnotation::geno(singlevcf)$PS[,1])
     colnames(adddf) <- paste0(sid, "_", colnames(adddf))
     S4Vectors::mcols(loci) <- cbind(S4Vectors::mcols(loci), adddf)
   }
@@ -220,7 +231,7 @@ get_multisample_phasing <- function(chrom, bbphasingprefixes, maxlag = 100, rela
   gtswitcheslist <- list()
   evidencelist <- list()
 
-  # I am making a change here to ensure that the script works with chromosomes where the number of called heterozygoes loci is smaller than then maxlag value.
+  # kno: I am making a change here to ensure that the script works with chromosomes where the number of called heterozygoes loci is smaller than then maxlag value.
   # If the number of heterozygoes loci is below maxlag, the test will be run only on this number of iterations
   for (lag in 1:min(length(loci) -1 , maxlag)) {
     # print(lag)
@@ -319,7 +330,7 @@ call_multisample_MSAI <- function(rdsprefix, subclonesfiles, chrom_names, tumour
     # load loci.RDS file and simplify genotype formatting
     loci <- readRDS(file = paste0(rdsprefix, chrom, "_loci.RDS"))
     S4Vectors::mcols(loci)[,paste0(tumournames, "_Major")] <- S4Vectors::DataFrame(apply(X = S4Vectors::mcols(loci)[,paste0(tumournames, "_Major")],
-                                                                    MARGIN = 2, FUN = function(x) as.numeric(substr(x = x, start = 1, stop = 1))))
+                                                                                         MARGIN = 2, FUN = function(x) as.numeric(substr(x = x, start = 1, stop = 1))))
 
     if (length(imbalancedregions_disj[[chrom]]) > 0) {
       # split loci by abberrated region, compare only ranges to avoid chr naming scheme mismatch

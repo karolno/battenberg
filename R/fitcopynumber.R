@@ -970,19 +970,42 @@ callChrXsubclones = function(tumourname,X_gamma=1000,X_kmin=100,genomebuild,AR=T
   colnames(PCFinput)[3]=tumourname
   print(paste("Number of chrX nonPAR SNPs =",nrow(PCFinput)))
 
+
+
+  # KNO
+  # Check if chromosome names start with chr,
+  # Remove if they do
+  recorrect <- FALSE
+  if (any(grepl("chr",PCFinput[,1]))) {
+    PCFinput[,1] <- sub("chr", "", PCFinput[,1])
+    recorrect <-TRUE
+  }
+
+
   if (!is.null(prior_breakpoints_file)) {
     sv=read.table(prior_breakpoints_file, header=T, stringsAsFactors=F)
     sv=sv[which(!is.na(match(sv$chr,c("X","chrX")))),]
+    sv=sv[sv$position >= min(PCFinput$Position),]
+    sv=sv[sv$position <= max(PCFinput$Position),]
     breakpoints=c(min(PCFinput$Position),sv$pos,max(PCFinput$Position))
+
+
     PCF=data.frame()
     for (j in 1:(length(breakpoints)-1)) {
+      print(j)
       PCFinput_sv=PCFinput[which(PCFinput$Position>=breakpoints[j] & PCFinput$Position<breakpoints[j+1]),]
+      if (nrow(PCFinput_sv) > 0) {
       PCF_sv=copynumber::pcf(PCFinput_sv,gamma=X_gamma,kmin=X_kmin)
       PCF=rbind(PCF,PCF_sv)
+      }
     }
   } else {
     PCF=copynumber::pcf(PCFinput,gamma=X_gamma,kmin=X_kmin)
   }
+  if (recorrect) {
+    PCF[,2] <- paste0("chr", PCF[,2])
+  }
+
   write.table(PCF,paste0(tumourname,"_PCF_gamma_",X_gamma,"_chrX.txt"),col.names=T,row.names=F,quote=F,sep="\t")
   print("PCF segmentation done")
 
@@ -1300,12 +1323,20 @@ callChrXsubclones = function(tumourname,X_gamma=1000,X_kmin=100,genomebuild,AR=T
   # goodness from rho_psi file (i.e. column named 'distance')
   goodness=read.table(paste0(tumourname,"_rho_and_psi.txt"),header=T,stringsAsFactors = F,sep="\t")
   goodness=goodness[which(goodness$is.best=="TRUE"),"distance"]
+
+  # kno
+  # Sometimes goodness of fit is already expressed as a percantage and this affects how it's displayed. Here I will modify all value higher than 1 (I assume goodness of fit below 1 doesn't happen)
+  if (goodness > 1) {
+    goodness <- goodness/100
+  }
+
+
   # rho and ploidy from purity_ploidy file
   rho_psi=read.table(paste0(tumourname,"_purity_ploidy.txt"),header=T,stringsAsFactors = F,sep="\t")
-  rho=rho_psi$cellularity
+  rho=rho_psi$purity
   ploidy=rho_psi$ploidy
   # Need BAFsegment file
-  BAFvals=as.data.frame(Battenberg:::read_bafsegmented(paste0(tumourname,".BAFsegmented.txt")))
+  BAFvals=as.data.frame(read_bafsegmented(paste0(tumourname,".BAFsegmented.txt")))
   # BAFvals=rbind(BAFvals[which(is.na(match(BAFvals$Chromosome,c("X","chrX")))),],
   #               data.frame(Chromosome="X",Position=sort(sample(1:155e6,90000,replace=F)), # 155e6: approximate length of chrX
   #                          BAF=sample(c(0,1),90000,replace=T),BAFphased=1,BAFseg=1)) # 90000 = typical no. of het SNPs expected based on chrX length (roughly around chr 7 and 8 average hetSNP counts)
@@ -1326,11 +1357,16 @@ callChrXsubclones = function(tumourname,X_gamma=1000,X_kmin=100,genomebuild,AR=T
   # #####################
   SNPsXnumber <- round(length(which(is.na(match(BAFvals$Chromosome,c("X","chrX"))))) / (90000 * 3e9 / 155e6 - 90000) * 90000)
 
+  if (any(grepl("chr",BAFvals$Chromosome))) {
+    X.name <-"chrX"
+  } else {
+    X.name <- "X"
+  }
   BAFvals=rbind(BAFvals[which(is.na(match(BAFvals$Chromosome,c("X","chrX")))),],
-                data.frame(Chromosome="X",Position=sort(sample(1:155e6,SNPsXnumber,replace=F)), # 155e6: approximate length of chrX
+                data.frame(Chromosome=X.name,Position=sort(sample(1:155e6,SNPsXnumber,replace=F)), # 155e6: approximate length of chrX
                            BAF=sample(c(0,1),SNPsXnumber,replace=T),BAFphased=1,BAFseg=1)) # 90000 = typical no. of het SNPs expected based on chrX length (roughly around chr 7 and 8 average hetSNP counts)
 
-  Battenberg:::plot.gw.subclonal.cn(subclones=BBnew,
+  plot.gw.subclonal.cn(subclones=BBnew,
                                     BAFvals=BAFvals,
                                     rho=rho,
                                     ploidy=ploidy,

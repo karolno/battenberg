@@ -75,7 +75,8 @@ prepare_mutREAD = function(chrom_names, tumourbam, normalbam, tumourname, normal
                   chr_names=chrom_names,
                   g1000file.prefix=g1000allelesprefix,
                   minCounts=min_normal_depth,
-                  samplename=tumourname)
+                  samplename=tumourname,
+                  strip.chr=FALSE)
 
   # Perform GC and fragment length correction using mutREAD pipeline
   process.mutREAD(binspan=binspan,

@@ -264,7 +264,7 @@ process.mutREAD.bams<-function(sample.name, bamlocation, bins, binspan=5e5L, dir
   # combined.data <- mutREADcorrectData(corrected.data)
 
   # Center around the mean copy number state
-  combined.data[, "corrected.counts"] <- combined.data[, "corrected.counts"] -  median(combined.data[!grepl(pattern = "^X|Y", rownames(combined.data), perl = TRUE),"corrected.counts"], na.rm = TRUE)
+  combined.data[, "corrected.counts"] <- combined.data[, "corrected.counts"] -  median(combined.data[!grepl(pattern = "X|Y", rownames(combined.data), perl = TRUE),"corrected.counts"], na.rm = TRUE)
 
   coverage.plot <- coverage.plot.mutREAD(combined.data,pct.plot = 100, run.median.k = 1) + geom_hline(yintercept = median(combined.data[,"corrected.counts"], na.rm = TRUE), color = "red")
   # coverage.plot

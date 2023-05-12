@@ -17,6 +17,7 @@ getBAFsAndLogRs(
   g1000file.prefix,
   minCounts = NA,
   samplename = "sample1",
+  strip.chr = TRUE,
   seed = as.integer(Sys.time())
 )
 }
@@ -44,6 +45,8 @@ getBAFsAndLogRs(
 \item{minCounts}{Integer, minimum depth required for a SNP to be included (optional, default=NA).}
 
 \item{samplename}{String, name of the sample (optional, default=sample1).}
+
+\item{strip.chr}{Boolean, whether to strip out the "chr" from the name of chromosomes (optional, default=TRUE)}
 
 \item{seed}{A seed to be set for when randomising the alleles.}
 }

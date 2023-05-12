@@ -43,21 +43,23 @@ getAlleleCounts = function(bam.file, output.file, g1000.loci, min.base.qual=20, 
 #' @param minCounts Integer, minimum depth required for a SNP to be included (optional, default=NA).
 #' @param samplename String, name of the sample (optional, default=sample1).
 #' @param seed A seed to be set for when randomising the alleles.
+#' @param strip.chr Boolean, whether to strip out the "chr" from the name of chromosomes (optional, default=TRUE)
 #' @author dw9, sd11
 #' @export
-getBAFsAndLogRs = function(tumourAlleleCountsFile.prefix, normalAlleleCountsFile.prefix, figuresFile.prefix, BAFnormalFile, BAFmutantFile, logRnormalFile, logRmutantFile, combinedAlleleCountsFile, chr_names, g1000file.prefix, minCounts=NA, samplename="sample1", seed=as.integer(Sys.time())) {
+getBAFsAndLogRs = function(tumourAlleleCountsFile.prefix, normalAlleleCountsFile.prefix, figuresFile.prefix, BAFnormalFile, BAFmutantFile, logRnormalFile, logRmutantFile, combinedAlleleCountsFile, chr_names, g1000file.prefix, minCounts=NA, samplename="sample1", strip.chr= TRUE, seed=as.integer(Sys.time())) {
 
   set.seed(seed)
 
   input_data = concatenateAlleleCountFiles(tumourAlleleCountsFile.prefix, ".txt", chr_names)
   normal_input_data = concatenateAlleleCountFiles(normalAlleleCountsFile.prefix, ".txt", chr_names)
   allele_data = concatenateG1000SnpFiles(g1000file.prefix, ".txt", chr_names)
-  
-  # We're no longer stripping out the "chr", which is causing problems
-  allele_data[,1] = gsub("chr","",allele_data[,1])
-  normal_input_data[,1] = gsub("chr","",normal_input_data[,1])
-  input_data[,1] = gsub("chr","",input_data[,1])
 
+  # We're no longer stripping out the "chr", which is causing problems
+  if (strip.chr) {
+    allele_data[,1] = gsub("chr","",allele_data[,1])
+    normal_input_data[,1] = gsub("chr","",normal_input_data[,1])
+    input_data[,1] = gsub("chr","",input_data[,1])
+  }
   # Synchronise all the data frames
   chrpos_allele = paste(allele_data[,1], "_", allele_data[,2], sep="")
   chrpos_normal = paste(normal_input_data[,1], "_", normal_input_data[,2], sep="")
@@ -174,7 +176,7 @@ generate.impute.input.wgs = function(chrom, tumour.allele.counts.file, normal.al
   impute.info = parse.imputeinfofile(imputeinfofile, is.male, chrom=chrom)
   chr_names = unique(impute.info$chrom)
   chrom_name = chrom
-  
+
   #print(paste("GenerateImputeInput is.male? ", is.male,sep=""))
   #print(paste("GenerateImputeInput #impute files? ", nrow(impute.info),sep=""))
 
@@ -410,7 +412,7 @@ prepare_wgs = function(chrom_names, tumourbam, normalbam, tumourname, normalname
                       min.base.qual=min_base_qual,
                       min.map.qual=min_map_qual,
                       allelecounter.exe=allelecounter_exe)
-      
+
       if (!skip_allele_counting_normal) {
         getAlleleCounts(bam.file=normalbam,
                         output.file=paste(normalname,"_alleleFrequencies_chr", chrom_names[i], ".txt",  sep=""),
