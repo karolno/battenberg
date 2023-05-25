@@ -22,9 +22,10 @@
 #' @param genomebuild Genome version. Can be hg19 or hg38
 #' @param bins The location of .rds file contain information about bins to be analysed
 #' @param nthreads number of threads to use
+#' @param segment Should mutREAD data be segmented using HMMCopy
 #' @author Karol Nowicki-Osuch
 #' @export
-process.mutREAD <- function (binspan=5e5L, tumourbam, normalbam, ref.sample, tumour.sample, directory, bins, genomebuild = "hg19", nthreads = 1) {
+process.mutREAD <- function (binspan=5e5L, tumourbam, normalbam, ref.sample, tumour.sample, directory, bins, genomebuild = "hg19", nthreads = 1, segment = TRUE) {
   # Get all bins to be used for analysis
   # bins <-"~/Dropbox/Postdoc/git/mutREAD/Battenberg_mutREAD/data_files/bins50-800.rds"
   bins<-readRDS(file = bins)
@@ -48,7 +49,7 @@ process.mutREAD <- function (binspan=5e5L, tumourbam, normalbam, ref.sample, tum
   # copyNumbersSmooth.cancer <- process.mutREAD.bams(sample = "SLX-15782.C1", bamlocation = "/mnt/data/mutREAD/SLX-15782/bams_alt/", bins = bins, binspan = 5e5)
   # copyNumbersSmooth.normal <- process.mutREAD.bams(sample = "SLX-15782.A2", bamlocation = "/mnt/data/mutREAD/SLX-15782/bams_alt/", bins = bins, binspan = 5e5)
   # Read bam files to get the counts for cancer samples
-  copyNumbersSmooth.cancer <- process.mutREAD.bams(sample.name = tumour.sample, bamlocation = tumourbam, bins = bins, directory = directory, genomebuild = genomebuild,  binspan = binspan, segment = TRUE, nthreads = nthreads)
+  copyNumbersSmooth.cancer <- process.mutREAD.bams(sample.name = tumour.sample, bamlocation = tumourbam, bins = bins, directory = directory, genomebuild = genomebuild,  binspan = binspan, segment = segment, nthreads = nthreads)
   # Read bam files to get the counts for the reference sample
   copyNumbersSmooth.normal <- process.mutREAD.bams(sample.name = ref.sample, bamlocation = normalbam, bins = bins, directory = directory, genomebuild = genomebuild, binspan = binspan, segment = FALSE, nthreads = nthreads)
 

@@ -22,13 +22,15 @@
 #' @param binspan The span of the genomic region used to perform averaging of the signal for LogR calculation. It is an integer number. (Default: 5e5L)
 #' @param bins The location of .rds file contain information about bins to be analysed
 #' @param genomebuild Genome version. Can be hg19 or hg38
+#' @param segment Should mutREAD data be segmented using HMMCopy
 #' @author Karol Nowicki-Osuch
 #' @export
 prepare_mutREAD = function(chrom_names, tumourbam, normalbam, tumourname, normalname, g1000allelesprefix, g1000prefix, gccorrectprefix,
                            repliccorrectprefix, min_base_qual, min_map_qual, allelecounter_exe, min_normal_depth, nthreads, skip_allele_counting, skip_allele_counting_normal = F,
                            genomebuild = "hg19",
                            binspan = 5e5,
-                           bins = NA
+                           bins = NA,
+                           segment = TRUE
 
 ) {
 
@@ -87,7 +89,8 @@ prepare_mutREAD = function(chrom_names, tumourbam, normalbam, tumourname, normal
                   directory = getwd(),
                   nthreads = nthreads,
                   bins = bins,
-                  genomebuild = genomebuild)
+                  genomebuild = genomebuild,
+                  segment = segment)
 
   print(paste0("Successfully completed processing of mutREAD data for sample: ", tumourname,
                " Reference samples was: ", normalname))

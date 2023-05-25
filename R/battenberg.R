@@ -65,7 +65,7 @@
 battenberg = function(analysis="paired", samplename, normalname, sample_data_file, normal_data_file, imputeinfofile, g1000prefix, problemloci, gccorrectprefix=NULL,
                       repliccorrectprefix=NULL, g1000allelesprefix=NA, ismale=NA, data_type="wgs", impute_exe="impute2", allelecounter_exe="alleleCounter", nthreads=8, platform_gamma=1, phasing_gamma=1,
                       segmentation_gamma=10, segmentation_kmin=3, phasing_kmin=1, clonality_dist_metric=0, ascat_dist_metric=1, min_ploidy=1.6,
-                      max_ploidy=4.8, min_rho=0.1, min_goodness=0.63, uninformative_BAF_threshold=0.51, min_normal_depth=10, min_base_qual=20,
+                      max_ploidy=4.8, min_rho=0.1, max_rho = 1, min_goodness=0.63, uninformative_BAF_threshold=0.51, min_normal_depth=10, min_base_qual=20,
                       min_map_qual=35, calc_seg_baf_option=3, skip_allele_counting=F, skip_preprocessing=F, skip_phasing=F, externalhaplotypefile = NA,
                       usebeagle=FALSE,
                       beaglejar=NA,
@@ -114,13 +114,19 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
     min_rho=0.99
     max_rho=1.01
   }
+  segment.mutREAD = FALSE
+  if (data_type == "mutREAD") {
 
-  if (data_type == "mutREAD" & is.null(prior_breakpoints_file)) {
-    stop("mutREAD pipeline has a built-in rudementary segmentation tool. When working with mutREAD data, an suffix to the output files must be provided. Alternatively, please provide an external breakpoint file")
+    if (is.null(prior_breakpoints_file)) {
+      prior_breakpoints_file <- rep(prior_breakpoints_file, times = length(tumour.sample))
+    } else if (file.exists(prior_breakpoints_file)) {
+      prior_breakpoints_file <- rep(prior_breakpoints_file, times = length(tumour.sample))
+    } else {
+      segment.mutREAD = TRUE
+      prior_breakpoints_file <- paste0(tumour.sample, BREAKPOINTFILE)
+    }
   }
-  if (data_type == "mutREAD" & !is.null(prior_breakpoints_file) & !file.exists(prior_breakpoints_file)) {
-    prior_breakpoints_file <- paste0(tumour.sample, BREAKPOINTFILE)
-  }
+
 
   if (data_type %in% c("wgs", "mutREAD") & is.na(ismale)) {
     stop("Please provide a boolean denominator whether this sample represents a male donor")
@@ -164,6 +170,19 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
     if (length(skip_phasing) < nsamples) {
       skip_phasing = rep(skip_phasing[1], nsamples)
     }
+    # KNO: allow for different value of min_ploidy, max_ploidy and min_rho when run in multisample mode
+    if (length(min_ploidy) < nsamples) {
+      min_ploidy = rep(min_ploidy[1], nsamples)
+    }
+    if (length(max_ploidy) < nsamples) {
+      max_ploidy = rep(max_ploidy[1], nsamples)
+    }
+    if (length(min_rho) < nsamples) {
+      min_rho = rep(min_rho[1], nsamples)
+    }
+    if (length(max_rho) < nsamples) {
+      max_rho = rep(max_rho[1], nsamples)
+    }
   }
 
   if (data_type=="wgs" | data_type=="WGS") {
@@ -198,7 +217,7 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
 
           if (is.null(normalname)|is.na(normalname)){
             stop("No normal sample is specified for 'paired analysis' - a normal paired BAM is required")
-            }
+          }
           prepare_wgs(chrom_names=chrom_names,
                       tumourbam=sample_data_file[sampleidx],
                       normalbam=normal_data_file,
@@ -296,9 +315,10 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
                         nthreads=nthreads,
                         skip_allele_counting=skip_allele_counting[sampleidx],
                         skip_allele_counting_normal = (sampleidx > 1),
-                        genomebuild = genomebuild)
+                        genomebuild = genomebuild,
+                        segment = segment.mutREAD)
 
-         } else {
+      } else {
         print("Unknown data type provided, please provide wgs, snp6 or mutREAD")
         q(save="no", status=1)
       }
@@ -463,7 +483,7 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
     multisamplehaplotypeprefix <- paste0(normalname, "_multisample_haplotypes_chr")
 
     # If working with mutREAD, combine segmentation data
-    if (data_type=="mutREAD" & length(prior_breakpoints_file) > 1) {
+    if (data_type=="mutREAD" & segment.mutREAD) {
       combine.breakpoints(prior_breakpoints_file, "combined.breakpoints.tab")
       prior_breakpoints_file <- "combined.breakpoints.tab"
     }
@@ -522,7 +542,7 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
                           chr_names=chrom_names,
                           minCounts=min_normal_depth)
 
-	# Plot what we have until this point
+        # Plot what we have until this point
         plot.haplotype.data(haplotyped.baf.file=paste0(samplename[sampleidx], "_chr", chrom, "_heterozygousMutBAFs_haplotyped.txt"),
                             imageFileName=paste0(samplename[sampleidx],"_chr",chrom,"_heterozygousData.png"),
                             samplename=samplename[sampleidx],
@@ -581,9 +601,10 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
                     inputfile.logr=logr_file,
                     dist_choice=clonality_dist_metric,
                     ascat_dist_choice=ascat_dist_metric,
-                    min.ploidy=min_ploidy,
-                    max.ploidy=max_ploidy,
-                    min.rho=min_rho,
+                    min.ploidy=min_ploidy[sampleidx],
+                    max.ploidy=max_ploidy[sampleidx],
+                    min.rho=min_rho[sampleidx],
+                    max.rho=max_rho[sampleidx],
                     min.goodness=min_goodness,
                     uninformative_BAF_threshold=uninformative_BAF_threshold,
                     gamma_param=platform_gamma,

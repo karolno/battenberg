@@ -23,7 +23,8 @@ prepare_mutREAD(
   skip_allele_counting_normal = F,
   genomebuild = "hg19",
   binspan = 500000,
-  bins = NA
+  bins = NA,
+  segment = TRUE
 )
 }
 \arguments{
@@ -64,6 +65,8 @@ prepare_mutREAD(
 \item{binspan}{The span of the genomic region used to perform averaging of the signal for LogR calculation. It is an integer number. (Default: 5e5L)}
 
 \item{bins}{The location of .rds file contain information about bins to be analysed}
+
+\item{segment}{Should mutREAD data be segmented using HMMCopy}
 }
 \description{
 This function performs part of the Battenberg WGS pipeline: Counting alleles, constructing BAF and logR

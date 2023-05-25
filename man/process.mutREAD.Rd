@@ -13,7 +13,8 @@ process.mutREAD(
   directory,
   bins,
   genomebuild = "hg19",
-  nthreads = 1
+  nthreads = 1,
+  segment = TRUE
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ process.mutREAD(
 \item{genomebuild}{Genome version. Can be hg19 or hg38}
 
 \item{nthreads}{number of threads to use}
+
+\item{segment}{Should mutREAD data be segmented using HMMCopy}
 }
 \description{
 This script performs counting of coverage within the individual target regions of mutREAD data for both bam files. It then performs normalisation of the coverage withint these regions. The normalization is done across the specific constant size genomics bins (default is 50 kb). It also outputs some diagnostics figures and raw data.
