@@ -70,8 +70,9 @@ process.mutREAD <- function (binspan=5e5L, tumourbam, normalbam, ref.sample, tum
   colnames(breakpoints.out) <- c("chromosome", "position")
   write.table(breakpoints.out, paste0(directory, "/", tumour.sample, "_breakpoints.after.normal.tab"), quote = FALSE, sep = "\t", row.names = FALSE)
   # write.table(seg.data$segs[,1:3], paste0(directory, "/", tumour.sample, "_breakpoints.after.normal2.tab"), quote = FALSE, sep = "\t", row.names = FALSE)
-  copyNumbersSmooth[,"state"] <- seg.data$state
-  copyNumbersSmooth[,"state.median"] <- seg.medians
+  copyNumbersSmooth <- cbind(copyNumbersSmooth, "state" = seg.data$state, "state.median" = seg.medians)
+  # copyNumbersSmooth[,"state"] <- seg.data$state
+  # copyNumbersSmooth[,"state.median"] <- seg.medians
 
   # Print diagnostics figure
   coverage.plot.state.after.normal <- coverage.plot.mutREAD_2(copyNumbersSmooth, pct.plot = 100, run.median.k = 1) #+ ylim(-2,2)
