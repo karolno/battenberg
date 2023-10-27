@@ -180,9 +180,9 @@ process.mutREAD.bams<-function(sample.name, bamlocation, bins, binspan=5e5L, dir
   print(paste("Processing file:", sample.name))
 
   bins2<-bins@data[,1:3]
-  if (genomebuild == "hg19") {
-    bins2$chromosome<-paste0("chr", bins2$chromosome)
-  }
+  # if (genomebuild == "hg19") {
+  #   bins2$chromosome<-paste0("chr", bins2$chromosome)
+  # }
   colnames(bins2)<-c("Chr", "Start", "End")
   bins2$GeneID<-rownames(bins2)
   bins2$Strand<-"."
