@@ -70,9 +70,13 @@ process.mutREAD <- function (binspan=5e5L, tumourbam, normalbam, ref.sample, tum
   colnames(breakpoints.out) <- c("chromosome", "position")
   write.table(breakpoints.out, paste0(directory, "/", tumour.sample, "_breakpoints.after.normal.tab"), quote = FALSE, sep = "\t", row.names = FALSE)
   # write.table(seg.data$segs[,1:3], paste0(directory, "/", tumour.sample, "_breakpoints.after.normal2.tab"), quote = FALSE, sep = "\t", row.names = FALSE)
-  copyNumbersSmooth <- cbind(copyNumbersSmooth, "state" = seg.data$state, "state.median" = seg.medians)
-  # copyNumbersSmooth[,"state"] <- seg.data$state
-  # copyNumbersSmooth[,"state.median"] <- seg.medians
+
+  if (segment) {
+    copyNumbersSmooth[,"state"] <- seg.data$state
+    copyNumbersSmooth[,"state.median"] <- seg.medians
+  } else {
+    copyNumbersSmooth <- cbind(copyNumbersSmooth, "state" = seg.data$state, "state.median" = seg.medians)
+  }
 
   # Print diagnostics figure
   coverage.plot.state.after.normal <- coverage.plot.mutREAD_2(copyNumbersSmooth, pct.plot = 100, run.median.k = 1) #+ ylim(-2,2)
@@ -189,7 +193,7 @@ process.mutREAD.bams<-function(sample.name, bamlocation, bins, binspan=5e5L, dir
   # perform counting
   fcounts <- Rsubread::featureCounts(bamlocation, annot.ext = bins2, fracOverlap = 0.75, minMQS = 37, ignoreDup = TRUE, isPairedEnd = TRUE, requireBothEndsMapped = TRUE, checkFragLength = TRUE, minFragLength = 40,  maxFragLength = 810, autosort = TRUE, nthreads = nthreads, tmpDir = "/tmp")
 
-  corrected.data <- mutREADestimateCorrection(counts.data = fcounts$counts, bins.data = bins, length.bin = 10, maxIter = 10, variables = c("gc", "length"), span = 0.1, nthreads = nthreads)
+  corrected.data <- mutREADestimateCorrection(counts.data = fcounts$counts, bins.data = bins, length.bin = 10, maxIter = 10, variables = c("gc", "length"), span = 0.1, nthreads = nthreads, genomebuild = genomebuild)
 
   write.table(corrected.data, paste0(directory, "/", sample.name, "_mutREAD.region.counts.txt"), quote = FALSE, sep = "\t", row.names = TRUE, col.names = NA)
 
@@ -574,8 +578,12 @@ mutREADcombineData <- function(object, bins, span = 50000L , method = "sum", cor
 
   if (genomebuild == "hg19") {
     require("BSgenome.Hsapiens.UCSC.hg19")
-    lengths <- GenomeInfoDb::seqlengths(BSgenome.Hsapiens.UCSC.hg19)[unique(bins$Chr)]
-    names(lengths)<-gsub("chr", "", names(lengths))
+    if (any(grepl("chr",unique(bins$Chr)))) {
+      lengths <- GenomeInfoDb::seqlengths(BSgenome.Hsapiens.UCSC.hg19)[unique(bins$Chr)]
+    }else {
+      lengths <- GenomeInfoDb::seqlengths(BSgenome.Hsapiens.UCSC.hg19)[paste0("chr",unique(bins$Chr))]
+      names(lengths)<-gsub("chr", "", names(lengths))
+    }
   } else if (genomebuild == "hg38") {
     require("BSgenome.Hsapiens.UCSC.hg38")
     lengths <- GenomeInfoDb::seqlengths(BSgenome.Hsapiens.UCSC.hg38)[unique(bins$Chr)]

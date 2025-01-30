@@ -202,6 +202,10 @@ write_battenberg_phasing <- function(tumourname, SNPfiles, imputedHaplotypeFiles
 get_multisample_phasing <- function(chrom, bbphasingprefixes, maxlag = 100, relative_weight_balanced = .25, outprefix) {
 
   vcfs <- lapply(X = paste0(bbphasingprefixes, chrom, ".vcf"), FUN = VariantAnnotation::readVcf)
+
+  # With some setting of Beagle location without genotype are output in the vcf files. This filter removes these locations
+  vcfs <- lapply(X = vcfs, FUN = function(x) {x[!is.na(VariantAnnotation::geno(x)$GT),]})
+
   samplenames <- sapply(X = vcfs, FUN = function(x) VariantAnnotation::samples(VariantAnnotation::header(x)))
 
   # get common hetSNP loci

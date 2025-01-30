@@ -123,7 +123,7 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
       prior_breakpoints_file <- rep(prior_breakpoints_file, times = length(tumour.sample))
     } else {
       segment.mutREAD = TRUE
-      prior_breakpoints_file <- paste0(tumour.sample, BREAKPOINTFILE)
+      prior_breakpoints_file <- paste0(tumour.sample, prior_breakpoints_file)
     }
   }
 
@@ -473,6 +473,15 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
                                    chrom_names = chrom_names[grep("X", chrom_names, invert = TRUE)],
                                    include_homozygous = F)
         }
+      } else {
+        # Write the Battenberg phasing information to disk as a vcf
+        write_battenberg_phasing(tumourname = samplename[sampleidx],
+                                 SNPfiles = paste0(samplename[sampleidx], "_alleleFrequencies_chr", chrom_names, ".txt"),
+                                 imputedHaplotypeFiles = paste0(samplename[sampleidx], "_impute_output_chr", chrom_names, "_allHaplotypeInfo.txt"),
+                                 bafsegmented_file = paste0(samplename[sampleidx], ".BAFsegmented.txt"),
+                                 outprefix = paste0(samplename[sampleidx], "_Battenberg_phased_chr"),
+                                 chrom_names = chrom_names,
+                                 include_homozygous = F)
       }
     }
   }
@@ -501,9 +510,13 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
     multisamplehaplotypeprefix <- paste0(normalname, "_multisample_haplotypes_chr")
 
     # If working with mutREAD, combine segmentation data
-    if (data_type=="mutREAD" & segment.mutREAD) {
-      combine.breakpoints(prior_breakpoints_file, "combined.breakpoints.tab")
-      prior_breakpoints_file <- "combined.breakpoints.tab"
+    if (data_type=="mutREAD") {
+      if (segment.mutREAD) {
+        combine.breakpoints(prior_breakpoints_file, "combined.breakpoints.tab")
+        prior_breakpoints_file <- "combined.breakpoints.tab"
+      } else {
+        prior_breakpoints_file <- prior_breakpoints_file[1]
+      }
     }
 
     # Setup for parallel computing
