@@ -449,31 +449,31 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
     if (nsamples > 1 | write_battenberg_phasing) {
 
 
-      if (data_type == "mutREAD" & ismale) {
-
-        X.name <- chrom_names[grep("X", chrom_names)]
-        segmented.data.data <- read.delim2(paste0(samplename[sampleidx], ".BAFsegmented.txt"))
-        has.X.data <- X.name %in% segmented.data.data[,1]
-        if (has.X.data) {
-          # Write the Battenberg phasing information to disk as a vcf
-          write_battenberg_phasing(tumourname = samplename[sampleidx],
-                                   SNPfiles = paste0(samplename[sampleidx], "_alleleFrequencies_chr", chrom_names, ".txt"),
-                                   imputedHaplotypeFiles = paste0(samplename[sampleidx], "_impute_output_chr", chrom_names, "_allHaplotypeInfo.txt"),
-                                   bafsegmented_file = paste0(samplename[sampleidx], ".BAFsegmented.txt"),
-                                   outprefix = paste0(samplename[sampleidx], "_Battenberg_phased_chr"),
-                                   chrom_names = chrom_names,
-                                   include_homozygous = F)
-        } else {
-          # Write the Battenberg phasing information to disk as a vcf
-          write_battenberg_phasing(tumourname = samplename[sampleidx],
-                                   SNPfiles = paste0(samplename[sampleidx], "_alleleFrequencies_chr", chrom_names, ".txt"),
-                                   imputedHaplotypeFiles = paste0(samplename[sampleidx], "_impute_output_chr", chrom_names, "_allHaplotypeInfo.txt"),
-                                   bafsegmented_file = paste0(samplename[sampleidx], ".BAFsegmented.txt"),
-                                   outprefix = paste0(samplename[sampleidx], "_Battenberg_phased_chr"),
-                                   chrom_names = chrom_names[grep("X", chrom_names, invert = TRUE)],
-                                   include_homozygous = F)
-        }
-      } else {
+#      if (data_type == "mutREAD" & ismale) {
+#
+#        X.name <- chrom_names[grep("X", chrom_names)]
+#        segmented.data.data <- read.delim2(paste0(samplename[sampleidx], ".BAFsegmented.txt"))
+#        has.X.data <- X.name %in% segmented.data.data[,1]
+#        if (has.X.data) {
+#          # Write the Battenberg phasing information to disk as a vcf
+#          write_battenberg_phasing(tumourname = samplename[sampleidx],
+#                                   SNPfiles = paste0(samplename[sampleidx], "_alleleFrequencies_chr", chrom_names, ".txt"),
+#                                   imputedHaplotypeFiles = paste0(samplename[sampleidx], "_impute_output_chr", chrom_names, "_allHaplotypeInfo.txt"),
+#                                   bafsegmented_file = paste0(samplename[sampleidx], ".BAFsegmented.txt"),
+#                                   outprefix = paste0(samplename[sampleidx], "_Battenberg_phased_chr"),
+#                                   chrom_names = chrom_names,
+#                                   include_homozygous = F)
+#        } else {
+#          # Write the Battenberg phasing information to disk as a vcf
+#          write_battenberg_phasing(tumourname = samplename[sampleidx],
+#                                   SNPfiles = paste0(samplename[sampleidx], "_alleleFrequencies_chr", chrom_names, ".txt"),
+#                                   imputedHaplotypeFiles = paste0(samplename[sampleidx], "_impute_output_chr", chrom_names, "_allHaplotypeInfo.txt"),
+#                                   bafsegmented_file = paste0(samplename[sampleidx], ".BAFsegmented.txt"),
+#                                   outprefix = paste0(samplename[sampleidx], "_Battenberg_phased_chr"),
+#                                   chrom_names = chrom_names[grep("X", chrom_names, invert = TRUE)],
+#                                   include_homozygous = F)
+#        }
+#      } else {
         # Write the Battenberg phasing information to disk as a vcf
         write_battenberg_phasing(tumourname = samplename[sampleidx],
                                  SNPfiles = paste0(samplename[sampleidx], "_alleleFrequencies_chr", chrom_names, ".txt"),
@@ -482,26 +482,26 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
                                  outprefix = paste0(samplename[sampleidx], "_Battenberg_phased_chr"),
                                  chrom_names = chrom_names,
                                  include_homozygous = F)
-      }
-    }
+#     }
+   }
   }
 
-  # KNO:
-  # If this is mutRESAD run and sample is male, it is highly likely that none of hte called SNPs on chrX are heterozygoes. Check if that is the case and remove this chromosome from analysis if needed
-  if (data_type == "mutREAD" & ismale) {
-    X.name <- chrom_names[grep("X", chrom_names)]
-    segmented.data.data <- list()
-    for (sampleidx in 1:length(samplename)) {
-      segmented.data.data [[sampleidx]] <- read.delim2(paste0(samplename[sampleidx], ".BAFsegmented.txt"))
-    }
-    has.X.data <- any(unlist(lapply(segmented.data.data, function(x) {X.name %in% x[,1]})))
-    if (has.X.data) {
-      chrom_names_stored <- chrom_names
-    } else {
-      chrom_names_stored <- chrom_names
-      chrom_names <- chrom_names[grep("X", chrom_names, invert = TRUE)]
-    }
-  }
+#  # KNO:
+#  # If this is mutRESAD run and sample is male, it is highly likely that none of hte called SNPs on chrX are heterozygoes. Check if that is the case and remove this chromosome from analysis if needed
+#  if (data_type == "mutREAD" & ismale) {
+#    X.name <- chrom_names[grep("X", chrom_names)]
+#    segmented.data.data <- list()
+#    for (sampleidx in 1:length(samplename)) {
+#      segmented.data.data [[sampleidx]] <- read.delim2(paste0(samplename[sampleidx], ".BAFsegmented.txt"))
+#    }
+#    has.X.data <- any(unlist(lapply(segmented.data.data, function(x) {X.name %in% x[,1]})))
+#    if (has.X.data) {
+#      chrom_names_stored <- chrom_names
+#    } else {
+#      chrom_names_stored <- chrom_names
+#      chrom_names <- chrom_names[grep("X", chrom_names, invert = TRUE)]
+#    }
+#  }
 
 
   # if this is a multisample run, combine the battenberg phasing outputs, incorporate it and resegment
@@ -664,7 +664,7 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
 
     # If patient is male, get copy number status of ChrX based only on logR segmentation (due to hemizygosity of SNPs)
     # Only do this when X chromosome is included
-    if (ismale & "X" %in% chrom_names){
+    if (ismale & any(c("X", "chrX") %in%  chrom_names)){
       callChrXsubclones(tumourname=samplename[sampleidx],
                         X_gamma=1000,
                         X_kmin=100,
@@ -674,15 +674,15 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
                         chrom_names = chrom_names)
     }
 
-    if (data_type == "mutREAD" & ismale) {
-      callChrXsubclones(tumourname=samplename[sampleidx],
-                        X_gamma=1000,
-                        X_kmin=100,
-                        genomebuild=genomebuild,
-                        AR=TRUE,
-                        prior_breakpoints_file=prior_breakpoints_file,
-                        chrom_names = chrom_names_stored)
-    }
+    # if (data_type == "mutREAD" & ismale) {
+    #   callChrXsubclones(tumourname=samplename[sampleidx],
+    #                     X_gamma=1000,
+    #                     X_kmin=100,
+    #                     genomebuild=genomebuild,
+    #                     AR=TRUE,
+    #                     prior_breakpoints_file=prior_breakpoints_file,
+    #                     chrom_names = chrom_names_stored)
+    # }
 
     # Make some post-hoc plots
     make_posthoc_plots(samplename=samplename[sampleidx],
