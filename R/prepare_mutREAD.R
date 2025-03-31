@@ -27,7 +27,7 @@
 #' @export
 prepare_mutREAD = function(chrom_names, tumourbam, normalbam, tumourname, normalname, g1000allelesprefix, g1000prefix, gccorrectprefix,
                            repliccorrectprefix, min_base_qual, min_map_qual, allelecounter_exe, min_normal_depth, nthreads, skip_allele_counting, skip_allele_counting_normal = F,
-                           genomebuild = "hg19",
+                           genomebuild = "hg19", maxIter = 1, 
                            binspan = 5e5,
                            bins = NA,
                            segment = TRUE
@@ -90,7 +90,8 @@ prepare_mutREAD = function(chrom_names, tumourbam, normalbam, tumourname, normal
                   nthreads = nthreads,
                   bins = bins,
                   genomebuild = genomebuild,
-                  segment = segment)
+                  segment = segment,
+				  maxIter = maxIter)
 
   print(paste0("Successfully completed processing of mutREAD data for sample: ", tumourname,
                " Reference samples was: ", normalname))

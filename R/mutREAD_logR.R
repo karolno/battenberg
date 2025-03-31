@@ -25,7 +25,7 @@
 #' @param segment Should mutREAD data be segmented using HMMCopy
 #' @author Karol Nowicki-Osuch
 #' @export
-process.mutREAD <- function (binspan=5e5L, tumourbam, normalbam, ref.sample, tumour.sample, directory, bins, genomebuild = "hg19", nthreads = 1, segment = TRUE) {
+process.mutREAD <- function (binspan=5e5L, tumourbam, normalbam, ref.sample, tumour.sample, directory, bins, genomebuild = "hg19", nthreads = 1, segment = TRUE, maxIter = 1) {
   # Get all bins to be used for analysis
   # bins <-"~/Dropbox/Postdoc/git/mutREAD/Battenberg_mutREAD/data_files/bins50-800.rds"
   bins<-readRDS(file = bins)
@@ -49,9 +49,9 @@ process.mutREAD <- function (binspan=5e5L, tumourbam, normalbam, ref.sample, tum
   # copyNumbersSmooth.cancer <- process.mutREAD.bams(sample = "SLX-15782.C1", bamlocation = "/mnt/data/mutREAD/SLX-15782/bams_alt/", bins = bins, binspan = 5e5)
   # copyNumbersSmooth.normal <- process.mutREAD.bams(sample = "SLX-15782.A2", bamlocation = "/mnt/data/mutREAD/SLX-15782/bams_alt/", bins = bins, binspan = 5e5)
   # Read bam files to get the counts for cancer samples
-  copyNumbersSmooth.cancer <- process.mutREAD.bams(sample.name = tumour.sample, bamlocation = tumourbam, bins = bins, directory = directory, genomebuild = genomebuild,  binspan = binspan, segment = segment, nthreads = nthreads)
+  copyNumbersSmooth.cancer <- process.mutREAD.bams(sample.name = tumour.sample, bamlocation = tumourbam, bins = bins, directory = directory, genomebuild = genomebuild,  binspan = binspan, segment = segment, nthreads = nthreads, maxIter = maxIter)
   # Read bam files to get the counts for the reference sample
-  copyNumbersSmooth.normal <- process.mutREAD.bams(sample.name = ref.sample, bamlocation = normalbam, bins = bins, directory = directory, genomebuild = genomebuild, binspan = binspan, segment = FALSE, nthreads = nthreads)
+  copyNumbersSmooth.normal <- process.mutREAD.bams(sample.name = ref.sample, bamlocation = normalbam, bins = bins, directory = directory, genomebuild = genomebuild, binspan = binspan, segment = FALSE, nthreads = nthreads, maxIter = maxIter)
 
   # Correct the counts by normal sample
   copyNumbersSmooth <- copyNumbersSmooth.cancer
@@ -149,7 +149,7 @@ process.mutREAD <- function (binspan=5e5L, tumourbam, normalbam, ref.sample, tum
 #' @param nthread Number of threads to use
 #' @author Karol Nowicki-Osuch
 #' @export
-process.mutREAD.bams<-function(sample.name, bamlocation, bins, binspan=5e5L, directory, genomebuild = "hg19", segment = TRUE, nthreads = 1) {
+process.mutREAD.bams<-function(sample.name, bamlocation, bins, binspan=5e5L, directory, genomebuild = "hg19", segment = TRUE, nthreads = 1, maxIter = 1) {
   if (!requireNamespace("HMMcopy", quietly = TRUE)) {
     stop(
       "Package \"HMMcopy\" must be installed to use this function.",
@@ -193,7 +193,7 @@ process.mutREAD.bams<-function(sample.name, bamlocation, bins, binspan=5e5L, dir
   # perform counting
   fcounts <- Rsubread::featureCounts(bamlocation, annot.ext = bins2, fracOverlap = 0.75, minMQS = 37, ignoreDup = TRUE, isPairedEnd = TRUE, requireBothEndsMapped = TRUE, checkFragLength = TRUE, minFragLength = 40,  maxFragLength = 810, autosort = TRUE, nthreads = nthreads, tmpDir = "/tmp")
 
-  corrected.data <- mutREADestimateCorrection(counts.data = fcounts$counts, bins.data = bins, length.bin = 10, maxIter = 10, variables = c("gc", "length"), span = 0.1, nthreads = nthreads, genomebuild = genomebuild)
+  corrected.data <- mutREADestimateCorrection(counts.data = fcounts$counts, bins.data = bins, length.bin = 10, maxIter = maxIter, variables = c("gc", "length"), span = 0.1, nthreads = nthreads, genomebuild = genomebuild)
 
   write.table(corrected.data, paste0(directory, "/", sample.name, "_mutREAD.region.counts.txt"), quote = FALSE, sep = "\t", row.names = TRUE, col.names = NA)
 
