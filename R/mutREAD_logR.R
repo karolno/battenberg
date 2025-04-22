@@ -617,7 +617,7 @@ mutREADcombineData <- function(object, bins, span = 50000L , method = "sum", cor
     locations[,3] <- as.numeric(locations[,3])
 
     # get the data
-    working.object <- as.matrix(object[locations[,1] == chr & locations[,2] >= start & locations[,3] <= end ,c("counts", "fit", "gc", "mappability", "length")])
+    working.object <- as.matrix(data[locations[,1] == chr & locations[,2] >= start & locations[,3] <= end ,c("counts", "fit", "gc", "mappability", "length")])
     working.object[,2][working.object[,2] < 0 ] <- 0
     #The locations chromosome that should be merged
     locations <- locations[locations[,1] == chr & locations[,2] >= start & locations[,3] <= end ,]
