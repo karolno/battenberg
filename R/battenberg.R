@@ -679,7 +679,7 @@ battenberg = function(analysis="paired", samplename, normalname, sample_data_fil
     segment.baf.phased.multisample(samplename=samplename,
                                    inputfile=paste(samplename, "_heterozygousMutBAFs_haplotyped.txt", sep=""),
                                    outputfile=paste(samplename, ".BAFsegmented.txt", sep=""),
-                                   prior_breakpoints_file=prior_breakpoints_file,
+                                   prior_breakpoints_file=prior_breakpoints_file[1],
                                    gamma=segmentation_gamma_multisample,
                                    calc_seg_baf_option=calc_seg_baf_option,
                                    GENOMEBUILD=genomebuild)
